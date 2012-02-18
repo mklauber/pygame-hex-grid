@@ -37,7 +37,7 @@ class Map( object ):
 
 	
 
-	def ascii( self, numbers=True ):
+	def ascii( self, numbers=True, units=True ):
 		""" Debug method that draws the grid using ascii text """
 		
 		table = ""
@@ -58,35 +58,31 @@ class Map( object ):
 			else:
 				table += " " + ' ' * text_length
 		table += "\n"
-		# Each additional row
-		for row in range( ( self.rows ) * 2 + 1 ):
-			row_text = ""
-			# Alternate starting slashes
-			if row % 2 == 0:
-				row_text += "/"
-			else:
-				row_text += "\\"
-			# No leading slash on bottom row
-			if row == self.rows * 2 :
-				row_text = " "
+		# Each row
+		for row in range( self.rows ):
+			top = "/"
+			bottom = "\\"
 			
-			for col in range( self.cols ):
-				if (row + col) % 2 == 1:
-					row_text += '_' * text_length + "/"
+			for col in range(self.cols ):
+				unit = "U" if units and self.positions.get(( row + col / 2, col ) ) else ""
+				if col % 2 == 0:
+					text = "%d,%d" % ( row + col / 2, col ) if numbers else ""
+					top 	+= ( text ).center( text_length ) + "\\"
+					bottom	+= ( unit ).center( text_length, '_' ) + "/"
 				else:
-					row_text += ' ' * text_length + "\\"
+					text = "%d,%d" % ( 1 + row + col / 2, col ) if numbers else " "
+					top 	+= ( unit ).center( text_length, '_' ) + "/"
+					bottom	+= ( text ).center( text_length ) + "\\"
+			# Clean up tail slashes on even numbers of columns
+			if self.cols % 2 == 0:
+				if row == 0: top = top[:-1]
+			table += top + "\n" + bottom + "\n"
 			
-			# No trailing slass on first row, if even
-			if row == 0 and self.cols % 2 == 0 :
-				row_text = row_text[:-1]
-				
-			# No trailing slass on last row, if odd
-			if row == self.rows * 2 and self.cols % 2 ==1 :
-				row_text = row_text[:-1]
-			
-			# append row to table
-			table +=  row_text + "\n"
-
+		# Footer for last row
+		footer = " "
+		for col in range( 0, self.cols - 1, 2 ):
+			footer += " " * text_length + "\\" + '_'  * text_length + "/"
+		table += footer + "\n"
 		return table			
 
 	
@@ -141,9 +137,34 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Process some integers.')
 	parser.add_argument('-r', '--rows', dest='rows', type=int, default=5, help='Number of rows in grid.  Defaults to 5.')
 	parser.add_argument('-c', '--cols', dest='cols', type=int, default=5, help='Number of columns in grid.  Defaults to 5.')
-	parser.add_argument('-n', '--numbers', action='store', dest="numbers", type=bool, default=True, help='Display grid numbers on tiles.  Defaults to false')
+	parser.add_argument('-n', '--numbers', action="store_true", dest="numbers", default=False, help='Display grid numbers on tiles.  Defaults to false.')
+	parser.add_argument('-u', '--units', action="store_true", dest="units", default=False, help='Display units on tiles.  Defaults to false.')
 						 
 	args = parser.parse_args()
 	print( "Args: %s" % ( args ) )
-	m = Map( (args.rows, args.cols ) )
-	print m.ascii()
+	m = Map( (args.rows, args.cols ))
+
+	try:
+		import curses
+		import re
+		stdscr = curses.initscr()
+		stdscr.keypad(1)
+
+		while True:
+			stdscr.addstr( 1,0, m.ascii( numbers=args.numbers, units=args.units ) )
+			c = stdscr.getstr()
+			stdscr.clear()
+			if c == 'q': break
+			if re.match( r"U \d+,\d+", c ):
+				row, col = c[2:].split(',')
+				unit = m.positions.get( ( int(row), int(col) ) )
+				m.positions[ ( int(row), int(col) ) ] = "" if unit else "U"
+				stdscr.addstr( 0, 0, "%s unit at %s,%s" % ("Adding" if not unit else "Removing", row, col ) )
+			else: 
+				stdscr.addstr( 0, 0, "unrecognized input." )
+	
+	finally:
+		curses.nocbreak() 
+		stdscr.keypad(0)
+		curses.echo()
+		curses.endwin()
