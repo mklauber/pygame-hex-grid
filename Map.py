@@ -58,35 +58,30 @@ class Map( object ):
 			else:
 				table += " " + ' ' * text_length
 		table += "\n"
-		# Each additional row
-		for row in range( ( self.rows ) * 2 + 1 ):
-			row_text = ""
-			# Alternate starting slashes
-			if row % 2 == 0:
-				row_text += "/"
-			else:
-				row_text += "\\"
-			# No leading slash on bottom row
-			if row == self.rows * 2 :
-				row_text = " "
+		# Each row
+		for row in range( self.rows ):
+			top = "/"
+			bottom = "\\"
 			
-			for col in range( self.cols ):
-				if (row + col) % 2 == 1:
-					row_text += '_' * text_length + "/"
+			for col in range(self.cols ):
+				if col % 2 == 0:
+					text = "%d,%d" % ( row + col / 2, col ) if numbers else " "
+					top 	+= ( text ).center( text_length ) + "\\"
+					bottom	+= "_" * text_length + "/"
 				else:
-					row_text += ' ' * text_length + "\\"
+					text = "%d,%d" % ( 1 + row + col / 2, col ) if numbers else " "
+					top 	+= "_" * text_length + "/"
+					bottom	+= ( text ).center( text_length ) + "\\"
+			# Clean up tail slashes on even numbers of columns
+			if self.cols % 2 == 0:
+				if row == 0: top = top[:-1]
+			table += top + "\n" + bottom + "\n"
 			
-			# No trailing slass on first row, if even
-			if row == 0 and self.cols % 2 == 0 :
-				row_text = row_text[:-1]
-				
-			# No trailing slass on last row, if odd
-			if row == self.rows * 2 and self.cols % 2 ==1 :
-				row_text = row_text[:-1]
-			
-			# append row to table
-			table +=  row_text + "\n"
-
+		# Footer for last row
+		footer = " "
+		for col in range( 0, self.cols - 1, 2 ):
+			footer += " " * text_length + "\\" + '_'  * text_length + "/"
+		table += footer + "\n"
 		return table			
 
 	
@@ -141,9 +136,14 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Process some integers.')
 	parser.add_argument('-r', '--rows', dest='rows', type=int, default=5, help='Number of rows in grid.  Defaults to 5.')
 	parser.add_argument('-c', '--cols', dest='cols', type=int, default=5, help='Number of columns in grid.  Defaults to 5.')
-	parser.add_argument('-n', '--numbers', action='store', dest="numbers", type=bool, default=True, help='Display grid numbers on tiles.  Defaults to false')
+	parser.add_argument('-n', '--numbers', action="store_true", dest="numbers", default=False, help='Display grid numbers on tiles.  Defaults to false')
 						 
 	args = parser.parse_args()
 	print( "Args: %s" % ( args ) )
 	m = Map( (args.rows, args.cols ) )
-	print m.ascii()
+	print m.ascii( numbers=args.numbers )
+	
+	
+	
+	
+	
