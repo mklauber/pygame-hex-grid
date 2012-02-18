@@ -37,7 +37,7 @@ class Map( object ):
 
 	
 
-	def ascii( self, numbers=True ):
+	def ascii( self, numbers=True, units=True ):
 		""" Debug method that draws the grid using ascii text """
 		
 		table = ""
@@ -64,13 +64,14 @@ class Map( object ):
 			bottom = "\\"
 			
 			for col in range(self.cols ):
+				unit = "U" if units and self.positions.get(( row + col / 2, col ) ) else ""
 				if col % 2 == 0:
-					text = "%d,%d" % ( row + col / 2, col ) if numbers else " "
+					text = "%d,%d" % ( row + col / 2, col ) if numbers else ""
 					top 	+= ( text ).center( text_length ) + "\\"
-					bottom	+= "_" * text_length + "/"
+					bottom	+= ( unit ).center( text_length, '_' ) + "/"
 				else:
 					text = "%d,%d" % ( 1 + row + col / 2, col ) if numbers else " "
-					top 	+= "_" * text_length + "/"
+					top 	+= ( unit ).center( text_length, '_' ) + "/"
 					bottom	+= ( text ).center( text_length ) + "\\"
 			# Clean up tail slashes on even numbers of columns
 			if self.cols % 2 == 0:
@@ -136,14 +137,13 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Process some integers.')
 	parser.add_argument('-r', '--rows', dest='rows', type=int, default=5, help='Number of rows in grid.  Defaults to 5.')
 	parser.add_argument('-c', '--cols', dest='cols', type=int, default=5, help='Number of columns in grid.  Defaults to 5.')
-	parser.add_argument('-n', '--numbers', action="store_true", dest="numbers", default=False, help='Display grid numbers on tiles.  Defaults to false')
+	parser.add_argument('-n', '--numbers', action="store_true", dest="numbers", default=False, help='Display grid numbers on tiles.  Defaults to false.')
+	parser.add_argument('-u', '--units', action="store_true", dest="units", default=False, help='Display units on tiles.  Defaults to false.')
 						 
 	args = parser.parse_args()
 	print( "Args: %s" % ( args ) )
 	m = Map( (args.rows, args.cols ) )
-	print m.ascii( numbers=args.numbers )
-	
-	
-	
+	print m.ascii()	
+
 	
 	
