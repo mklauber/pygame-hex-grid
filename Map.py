@@ -142,8 +142,29 @@ if __name__ == '__main__':
 						 
 	args = parser.parse_args()
 	print( "Args: %s" % ( args ) )
-	m = Map( (args.rows, args.cols ) )
-	print m.ascii()	
+	m = Map( (args.rows, args.cols ))
 
+	try:
+		import curses
+		import re
+		stdscr = curses.initscr()
+		stdscr.keypad(1)
+
+		while True:
+			stdscr.addstr( 1,0, m.ascii( numbers=args.numbers, units=args.units ) )
+			c = stdscr.getstr()
+			stdscr.clear()
+			if c == 'q': break
+			if re.match( r"U \d+,\d+", c ):
+				row, col = c[2:].split(',')
+				unit = m.positions.get( ( int(row), int(col) ) )
+				m.positions[ ( int(row), int(col) ) ] = "" if unit else "U"
+				stdscr.addstr( 0, 0, "%s unit at %s,%s" % ("Adding" if not unit else "Removing", row, col ) )
+			else: 
+				stdscr.addstr( 0, 0, "unrecognized input." )
 	
-	
+	finally:
+		curses.nocbreak() 
+		stdscr.keypad(0)
+		curses.echo()
+		curses.endwin()
