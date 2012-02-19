@@ -1,6 +1,2 @@
-
-*.pyc   # Ignore compiled python files.
-*~      # Ignore backup files.
-
-
-
+*.pyc
+*~
