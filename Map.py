@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import argparse
 import math
+import operator
 import pygame
 
 import logging
@@ -34,8 +35,6 @@ class Map( object ):
 
 		logger.debug( "diffX: %d, diffY: %d, distance: %d", diffX, diffY, distance )
 		return distance
-
-
 
 	def ascii( self, numbers=True, units=True ):
 		""" Debug method that draws the grid using ascii text """
@@ -85,6 +84,87 @@ class Map( object ):
 		table += footer + "\n"
 		return table
 
+	def valid_cell( self, cell ):
+		row, col = cell
+		if col < 0 or col >= self.cols: return False
+		if row < math.ceil( col / 2.0 ) or row >= math.ceil( col / 2.0 ) + self.rows: return False
+		return True
+
+	def neighbors( self, center ):
+		"""
+		Return the valid cells neighboring the provided cell.
+		"""
+		return filter( self.valid_cell, [
+			( center[0] - 1, center[1] ), ( center[0], center[1] + 1 ),
+			( center[0] + 1, center[1] + 1 ), ( center[0] + 1, center[1] ),
+			( center[0], center[1] - 1 ), ( center[0] - 1, center[1] - 1 )
+		] )
+
+	def spread( self, center, radius=1 ):
+		"""
+		A slice of a map is a collection of valid cells, starting at an origin, 
+		and encompassing all cells within a given radius. 
+		"""
+		result = set( ( center, ) )				#Start out with this center cell
+		neighbors = self.neighbors( center )	#Get the neighbors for use later
+		if radius == 1:							#Recursion end case
+			result = result | set( neighbors )	#Return the set of this cell and its neighbors
+		else:					#Otherwise, recurse over all the neghbors, 
+			for n in neighbors:	#decrementing the radius by one.
+				result = result | set( self.spread( n, radius - 1 ) )
+		return filter( self.valid_cell, result )#filter invalid cells before returning.
+
+	def cone( self, origin, direction, length=1 ):
+		"""
+		A slice of a map is a section of cells, originating a a single cell and 
+		extending outward through two cells separated by one cell between them.
+		In the example below, starting at (0,0), (0,1) and (1,0) define a slice,
+		as do (-1,-1) and (0,1).
+		       _____  
+		 _____/-1,0 \_____
+		/-1,-1\_____/ 0,1 \
+		\_____/ 0,0 \_____/
+		/0,-1 \_____/ 1,1 \
+		\_____/ 1,0 \_____/
+		      \_____/
+		"""
+		result = self.slice( origin, direction, length )
+		result.extend( self.slice( origin, ( direction + 1 ) % 6, length ) )
+		return filter( self.valid_cell, set( result ) )
+
+	def slice( self, origin, direction, length=2 ):
+		"""
+		A slice of a map is a section of cells, originating a a single cell and 
+		extending outward through two neighboring cells.  In the example below,
+		starting at (0,0), (0,1) and (1,1) define a slice, as do (-1,0) and 
+		(-1,-1).
+		       _____
+		 _____/-1,0 \_____
+		/-1,-1\_____/ 0,1 \
+		\_____/ 0,0 \_____/
+		/0,-1 \_____/ 1,1 \
+		\_____/ 1,0 \_____/
+		      \_____/
+		"""
+		# The edge wheel described in the docnotes above, used for calculating edges and steps
+		wheel = [ ( 0, 1 ), ( 1, 1 ), ( 1, 0 ), ( 0, -1 ), ( -1, -1 ), ( -1, 0 ) ]
+
+		# edge is the step we take for each distance, 
+		# step is the increment for each cell that distance out
+		edge, step = wheel[ direction % 6], wheel[( direction + 2 ) % 6]
+
+		logger.debug( "Edge: %s, Step: %s", edge, step )
+
+		result = [ origin ]
+		# Work each row, i units out along an edge
+		for i in range( 1, length + 1 ):
+			start = ( origin[0] + edge[0] * i, origin[1] + edge[1] * i )
+			for j in range( i + 1 ):
+				# calculate 
+				pos = ( start[0] + step[0] * j, start[1] + step[1] * j )
+				result.append( pos )
+		return filter( self.valid_cell, result )
+
 
 class Position( dict ):
 	"""An extension of a basic dictionary with a fast lookup by value implementation."""
@@ -116,18 +196,6 @@ class MapUnit( object ):
 	def paint( self, surface ):
 		"""An abstract base method to contain the painting code for a given unit."""
 		pass
-
-	def _paint( self ):
-		"""A private method that does any necessary setup and teardown for the paint implementation."""
-		#TODO: determine sizing for this surface
-		surface = pygame.Surface()	#Create the surface needed for paint
-		surface = self.paint( surface )
-		return trim_tile( surface )	#Make transparent any areas outside the tile.
-
-def _trim_tile( surface ):
-	"""Helper method to make transparent any area on the surface outside the tile."""
-	pass
-
 
 if __name__ == '__main__':
 
