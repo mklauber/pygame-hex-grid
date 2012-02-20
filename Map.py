@@ -3,6 +3,7 @@ import argparse
 import math
 import operator
 import pygame
+import random
 
 import logging
 logger = logging.getLogger( __name__ )
@@ -12,6 +13,8 @@ class Map( object ):
 	"""
 	An top level object for managing all game data related to positioning, movement, and display.
 	"""
+	directions = [ ( 0, 1 ), ( 1, 1 ), ( 1, 0 ), ( 0, -1 ), ( -1, -1 ), ( -1, 0 ) ]
+
 	def __init__( self, ( rows, cols ), *args, **keywords ):
 		# for tracking units
 		self.positions = Position()
@@ -35,6 +38,22 @@ class Map( object ):
 
 		logger.debug( "diffX: %d, diffY: %d, distance: %d", diffX, diffY, distance )
 		return distance
+
+	def direction( self, origin, destination ):
+		"""
+		Reports the dominating direction from an origin to a destination.  if even, chooses randomly
+		Useful for calculating any type of forced movement
+		"""
+		offset = ( destination[0] - origin[0], destination[1] - origin[1] )
+		direction = ( offset[0] / float( max( offset ) ), offset[1] / float( max( offset ) ) )
+
+		def choose( i ):
+			if i == 0.5:
+				return random.choice( ( 0, 1 ) )
+			else:
+				return int( round( i ) )
+
+		return ( choose( direction[0] ), choose( direction[1] ) )
 
 	def ascii( self, numbers=True, units=True ):
 		""" Debug method that draws the grid using ascii text """
@@ -147,11 +166,11 @@ class Map( object ):
 		      \_____/
 		"""
 		# The edge wheel described in the docnotes above, used for calculating edges and steps
-		wheel = [ ( 0, 1 ), ( 1, 1 ), ( 1, 0 ), ( 0, -1 ), ( -1, -1 ), ( -1, 0 ) ]
+
 
 		# edge is the step we take for each distance, 
 		# step is the increment for each cell that distance out
-		edge, step = wheel[ direction % 6], wheel[( direction + 2 ) % 6]
+		edge, step = self.directions[ direction % 6], self.directions[( direction + 2 ) % 6]
 
 		logger.debug( "Edge: %s, Step: %s", edge, step )
 
@@ -165,6 +184,22 @@ class Map( object ):
 				result.append( pos )
 		return filter( self.valid_cell, result )
 
+	def line( self, origin, direction, length=3 ):
+		"""
+		Returns all the cells along a given line, starting at an origin
+		"""
+		offset = self.directions[direction]
+		results = [ origin ]
+		# Work each row, i units out along an edge
+		for i in range( 1, length + 1 ):
+			results.append( ( origin[0] + offset[0] * i, origin[1] + offset[1] * i ) )
+		return filter( self.valid_cell, results )
+
+	def units( self, cells ):
+		"""
+		Returns a dictionary of cell and units, given a set of cells 
+		"""
+		return {cell: self.positions[cell] for cell in cells if self.positions.get( cell, None )}
 
 class Position( dict ):
 	"""An extension of a basic dictionary with a fast lookup by value implementation."""
