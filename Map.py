@@ -11,7 +11,7 @@ logger = logging.getLogger( __name__ )
 
 class Map( object ):
 	"""
-	An top level object for managing all game data related to positioning, movement, and display.
+	An top level object for managing all game data related to positioning.
 	"""
 	directions = [ ( 0, 1 ), ( 1, 1 ), ( 1, 0 ), ( 0, -1 ), ( -1, -1 ), ( -1, 0 ) ]
 
@@ -202,7 +202,7 @@ class Map( object ):
 		return {cell: self.positions[cell] for cell in cells if self.positions.get( cell, None )}
 
 class Position( dict ):
-	"""An extension of a basic dictionary with a fast lookup by value implementation."""
+	"""An extension of a basic dictionary with a fast, consistent lookup by value implementation."""
 	def find( self, unit ):
 		"""
 		A fast lookup by value implementation
@@ -214,13 +214,14 @@ class Position( dict ):
 
 class MapUnit( object ):
 	"""
-	An abstract base class that will contain or require implementation of all the methods necessary for a unit to be managed by a map object.
+	An abstract base class that will contain or require implementation of all 
+	the methods necessary for a unit to be managed by a map object.
 	"""
 
 	__metaclass__ = ABCMeta
 
-	def __init__( self, map=map ):
-		self.map = map = map
+	def __init__( self, map ):
+		self.map = map
 
 	@property
 	def position( self ):
