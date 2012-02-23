@@ -88,6 +88,11 @@ class Render( pygame.Surface ):
 
 		return ( row, col ) if self.map.valid_cell( ( row, col ) ) else None
 
+	def fit_window( self, window ):
+	   top = max( window.get_height() - self.height, 0 )
+	   left = max( window.get_width() - map.width, 0 )
+	   return ( top, left )
+
 class RenderUnits( Render ):
 	"""
 	A premade render object that will automatically draw the Units from the map 
@@ -129,6 +134,10 @@ class RenderGrid( Render ):
 				points = [( x + left, y + top ) for ( x, y ) in cell]
 				# Draw the polygon onto the surface
 				pygame.draw.polygon( self, self.GRID_COLOR, points, 1 )
+
+class RenderFog( Render ):
+	def draw( self ):
+		pass
 
 
 if __name__ == '__main__':
