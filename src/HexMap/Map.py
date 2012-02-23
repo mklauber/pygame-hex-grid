@@ -211,6 +211,7 @@ class Position( dict ):
 		for pos, unit in self.items():
 			if unit == temp:
 				return pos
+		return None
 
 class MapUnit( object ):
 	"""
@@ -226,7 +227,7 @@ class MapUnit( object ):
 	@property
 	def position( self ):
 		"""A property that looks up the position of this unit on it's associated map."""
-		return self.map.position.find( self )
+		return self.map.positions.find( self )
 
 	@abstractmethod
 	def paint( self, surface ):
