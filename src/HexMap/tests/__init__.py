@@ -1,13 +1,21 @@
 import unittest
-import Map
-import Render
 
-def suite():
-	tests = [ Map, Render ]
+import os, sys
+dir = os.getcwd()
+if dir not in sys.path:
+	sys.path.append( dir )
 
-	return unittest.TestSuite( tests=[ test.suite() for test in tests] )
+import HexMap.tests.Map
+import HexMap.tests.Render
+
+def load_tests( loader, standard_tests, pattern ):
+	tests = [ HexMap.tests.Map, HexMap.tests.Render ]
+
+	return unittest.TestSuite( tests=[ test.load_tests( loader, standard_tests, None ) for test in tests] )
 
 if __name__ == '__main__':
-	tests = suite()
-	unittest.TextTestRunner( verbosity=2 ).run( tests )
+
+	loader = unittest.TestLoader()
+	tests = load_tests( loader, None, None )
+	unittest.TextTestRunner( verbosity=1 ).run( tests )
 

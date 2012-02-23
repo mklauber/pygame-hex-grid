@@ -23,6 +23,9 @@ class Map( object ):
 		self.rows = rows
 		self.cols = cols
 
+	def __str__( self ):
+		return "Map (%d, %d)" % ( self.rows, self.cols )
+
 	@property
 	def size( self ):
 		"""Returns the size of the grid as a tuple (row, col)"""
@@ -39,13 +42,17 @@ class Map( object ):
 		logger.debug( "diffX: %d, diffY: %d, distance: %d", diffX, diffY, distance )
 		return distance
 
+	@classmethod
 	def direction( self, origin, destination ):
 		"""
 		Reports the dominating direction from an origin to a destination.  if even, chooses randomly
 		Useful for calculating any type of forced movement
 		"""
 		offset = ( destination[0] - origin[0], destination[1] - origin[1] )
-		direction = ( offset[0] / float( max( offset ) ), offset[1] / float( max( offset ) ) )
+		scale = float( max( abs( offset[0] ), abs( offset[1] ) ) )
+		if scale == 0:
+			return ( 0, 0 )
+		direction = ( offset[0] / scale, offset[1] / scale )
 
 		def choose( i ):
 			if i == 0.5:
