@@ -234,13 +234,13 @@ class MapUnit( object ):
 
 	__metaclass__ = ABCMeta
 
-	def __init__( self, map ):
-		self.map = map
+	def __init__( self, grid ):
+		self.grid = grid
 
 	@property
 	def position( self ):
 		"""A property that looks up the position of this unit on it's associated map."""
-		return self.map.positions.find( self )
+		return self.grid.find( self )
 
 	@abstractmethod
 	def paint( self, surface ):
@@ -256,7 +256,6 @@ if __name__ == '__main__':
 	parser.add_argument( '-r', '--rows', dest='rows', type=int, default=5, help='Number of rows in grid.  Defaults to 5.' )
 	parser.add_argument( '-c', '--cols', dest='cols', type=int, default=5, help='Number of columns in grid.  Defaults to 5.' )
 	parser.add_argument( '-n', '--numbers', action="store_true", dest="numbers", default=False, help='Display grid numbers on tiles.  Defaults to false.' )
-	parser.add_argument( '-u', '--units', action="store_true", dest="units", default=False, help='Display units on tiles.  Defaults to false.' )
 	parser.add_argument( '-i', '--interactive', action="store_true", dest="interactive", default=False, help="Provide a ncurses interactive interface." )
 
 
@@ -264,8 +263,8 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	print( "Args: %s" % ( args ) )
 	m = Map( ( args.rows, args.cols ) )
+	m.units = Grid()
 	numbers = args.numbers
-	units = args.units
 
 	if args.interactive:
 		try:
@@ -275,19 +274,11 @@ if __name__ == '__main__':
 			stdscr.keypad( 1 )
 
 			while True:
-				stdscr.addstr( 1, 0, m.ascii( numbers=numbers, units=units ) )
+				stdscr.addstr( 1, 0, m.ascii( numbers=numbers ) )
 				c = stdscr.getstr()
 				stdscr.clear()
 				if c == 'q': break
-				elif c == 'U': units = not units
 				elif c == 'N': numbers = not numbers
-				elif re.match( r"U \d+,\d+", c ):
-					row, col = c[2:].split( ',' )
-					unit = m.positions.get( ( int( row ), int( col ) ) )
-					m.positions[ ( int( row ), int( col ) ) ] = "" if unit else "U"
-					stdscr.addstr( 0, 0, "%s unit at %s,%s" % ( "Adding" if not unit else "Removing", row, col ) )
-				else:
-					stdscr.addstr( 0, 0, "unrecognized input." )
 
 		finally:
 			curses.nocbreak()
@@ -295,4 +286,4 @@ if __name__ == '__main__':
 			curses.echo()
 			curses.endwin()
 	else:
-		print( m.ascii( numbers, units ) )
+		print( m.ascii( numbers ) )
