@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import pygame
 import math
+from Map import Grid
 
 SQRT3 = math.sqrt( 3 )
 
@@ -8,15 +9,25 @@ class Render( pygame.Surface ):
 
 	__metaclass__ = ABCMeta
 
-	def __init__( self, map, radius=16 ):
+
+
+	def __init__( self, map, radius=16, *args, **keywords ):
 		self.map = map
 		self.radius = radius
 
 		# Colors for the map
 		self.GRID_COLOR = pygame.Color( 50, 50, 50 )
 
-		super( Render, self ).__init__( ( self.width, self.height ) )
-		pass
+		super( Render, self ).__init__( ( self.width, self.height ), *args, **keywords )
+
+		self.cell = [( .5 * self.radius, 0 ),
+					( 1.5 * self.radius, 0 ),
+					( 2 * self.radius, SQRT3 / 2 * self.radius ),
+					( 1.5 * self.radius, SQRT3 * self.radius ),
+					( .5 * self.radius, SQRT3 * self.radius ),
+					( 0, SQRT3 / 2 * self.radius )
+		]
+
 
 
 	@property
@@ -98,12 +109,18 @@ class RenderUnits( Render ):
 	A premade render object that will automatically draw the Units from the map 
 	
 	"""
+
+	def __init__( self, map, *args, **keywords ):
+		super( RenderUnits, self ).__init__( map, *args, **keywords )
+		if not hasattr( self.map, 'units' ):
+			self.map.units = Grid()
+
 	def draw( self ):
 		"""
 		Calls unit.paint for all units on self.map
 		"""
 		super( RenderUnits, self ).draw()
-		units = self.map.positions
+		units = self.map.units
 
 		for position, unit in units.items():
 			surface = self.get_surface( position )
@@ -116,13 +133,7 @@ class RenderGrid( Render ):
 		"""
 		super( RenderGrid, self ).draw()
 		# A point list describing a single cell, based on the radius of each hex
-		cell = [	( .5 * self.radius, 0 ),
-					( 1.5 * self.radius, 0 ),
-					( 2 * self.radius, SQRT3 / 2 * self.radius ),
-					( 1.5 * self.radius, SQRT3 * self.radius ),
-					( .5 * self.radius, SQRT3 * self.radius ),
-					( 0, SQRT3 / 2 * self.radius )
-		]
+
 		for col in range( self.map.cols ):
 			# Alternate the offset of the cells based on column
 			offset = self.radius * SQRT3 / 2 if col % 2 else 0
@@ -131,13 +142,47 @@ class RenderGrid( Render ):
 				top = offset + SQRT3 * row * self.radius
 				left = 1.5 * col * self.radius
 				# Create a point list containing the offset cell
-				points = [( x + left, y + top ) for ( x, y ) in cell]
+				points = [( x + left, y + top ) for ( x, y ) in self.cell]
 				# Draw the polygon onto the surface
 				pygame.draw.polygon( self, self.GRID_COLOR, points, 1 )
 
 class RenderFog( Render ):
+
+	OBSCURED = pygame.Color( 00, 00, 00, 255 )
+	SEEN	 = pygame.Color( 00, 00, 00, 100 )
+	VISIBLE	 = pygame.Color( 00, 00, 00, 0 )
+
+	def __init__( self, map, *args, **keywords ):
+
+		super( RenderFog, self ).__init__( map, *args, flags=pygame.SRCALPHA, **keywords )
+		if not hasattr( self.map, 'fog' ):
+			self.map.fog = Grid( default=self.OBSCURED )
+
 	def draw( self ):
-		pass
+
+		#Some constants for the math		
+		height = self.radius * SQRT3
+		width = 1.5 * self.radius
+		offset = height / 2
+
+		for cell in self.map.cells():
+			row, col = cell
+			surface = self.get_cell( cell )
+
+			# Calculate the position of the cell
+			top = row * height - offset * col
+			left = width * col
+
+			#Determine the points that corresponds with
+			points = [( x + left, y + top ) for ( x, y ) in self.cell]
+			# Draw the polygon onto the surface
+			pygame.draw.polygon( self, self.map.fog[ cell ], points, 0 )
+
+
+
+
+def trim_cell( surface ):
+	pass
 
 
 if __name__ == '__main__':
@@ -151,14 +196,24 @@ if __name__ == '__main__':
 			pygame.draw.circle( surface, self.color, ( radius, int( SQRT3 / 2 * radius ) ), int( radius - radius * .3 ) )
 
 	m = Map( ( 5, 5 ) )
-	m.positions[( 0, 0 ) ] = Unit( m )
-	m.positions[( 3, 2 ) ] = Unit( m )
-	m.positions[( 5, 3 ) ] = Unit( m )
-	m.positions[( 5, 4 ) ] = Unit( m )
-	print( m.ascii() )
 
 	grid = RenderGrid( m, radius=32 )
 	units = RenderUnits( m, radius=32 )
+	fog = RenderFog( m, radius=32 )
+
+	m.units[( 0, 0 ) ] = Unit( m )
+	m.units[( 3, 2 ) ] = Unit( m )
+	m.units[( 5, 3 ) ] = Unit( m )
+	m.units[( 5, 4 ) ] = Unit( m )
+
+	for cell in m.spread( ( 3, 2 ), radius=2 ):
+		m.fog[cell] = fog.SEEN
+
+	for cell in m.spread( ( 3, 2 ) ):
+		m.fog[cell] = fog.VISIBLE
+
+	print( m.ascii() )
+
 
 	try:
 		pygame.init()
@@ -176,10 +231,13 @@ if __name__ == '__main__':
 				if event.type == MOUSEBUTTONDOWN:
 					print( units.get_cell( event.pos ) )
 
+			window.fill( pygame.Color( 'white' ) )
 			grid.draw()
 			units.draw()
+			fog.draw()
 			window.blit( grid, ( 0, 0 ) )
 			window.blit( units, ( 0, 0 ) )
+			window.blit( fog, ( 0, 0 ) )
 			pygame.display.update()
 			fpsClock.tick( 10 )
 	finally:
