@@ -16,9 +16,6 @@ class Map( object ):
 	directions = [ ( 0, 1 ), ( 1, 1 ), ( 1, 0 ), ( 0, -1 ), ( -1, -1 ), ( -1, 0 ) ]
 
 	def __init__( self, ( rows, cols ), *args, **keywords ):
-		# for tracking units
-		self.positions = Position()
-
 		#Map size
 		self.rows = rows
 		self.cols = cols
@@ -62,7 +59,7 @@ class Map( object ):
 
 		return ( choose( direction[0] ), choose( direction[1] ) )
 
-	def ascii( self, numbers=True, units=True ):
+	def ascii( self, numbers=True ):
 		""" Debug method that draws the grid using ascii text """
 
 		table = ""
@@ -89,14 +86,14 @@ class Map( object ):
 			bottom = "\\"
 
 			for col in range( self.cols ):
-				unit = "U" if units and self.positions.get( ( row + col / 2, col ) ) else ""
+#				unit = "U" if units and self.positions.get( ( row + col / 2, col ) ) else ""
 				if col % 2 == 0:
 					text = "%d,%d" % ( row + col / 2, col ) if numbers else ""
 					top 	 += ( text ).center( text_length ) + "\\"
-					bottom	 += ( unit ).center( text_length, '_' ) + "/"
+					bottom	 += ( "" ).center( text_length, '_' ) + "/"
 				else:
 					text = "%d,%d" % ( 1 + row + col / 2, col ) if numbers else " "
-					top 	 += ( unit ).center( text_length, '_' ) + "/"
+					top 	 += ( "" ).center( text_length, '_' ) + "/"
 					bottom	 += ( text ).center( text_length ) + "\\"
 			# Clean up tail slashes on even numbers of columns
 			if self.cols % 2 == 0:
@@ -202,21 +199,30 @@ class Map( object ):
 			results.append( ( origin[0] + offset[0] * i, origin[1] + offset[1] * i ) )
 		return filter( self.valid_cell, results )
 
-	def units( self, cells ):
-		"""
-		Returns a dictionary of cell and units, given a set of cells 
-		"""
-		return {cell: self.positions[cell] for cell in cells if self.positions.get( cell, None )}
+	def cells( self ):
+		cells = []
+		for row in range( self.rows + self.cols / 2 ):
+			cells.extend( 
+				[( row, col ) for col in range( 1 + 2 * row ) ]
+			)
+		return filter( self.valid_cell, cells )
 
-class Position( dict ):
+class Grid( dict ):
 	"""An extension of a basic dictionary with a fast, consistent lookup by value implementation."""
-	def find( self, unit ):
+
+	def __init__( self, default=None, *args, **keywords ):
+		super( Grid, self ).__init__( *args, **keywords )
+		self.default = default
+
+	def __getitem__( self, key ):
+		return super( Grid, self ).get( key, self.default )
+
+	def find( self, item ):
 		"""
 		A fast lookup by value implementation
 		"""
-		temp = unit
-		for pos, unit in self.items():
-			if unit == temp:
+		for pos, value in self.items():
+			if item == value:
 				return pos
 		return None
 
