@@ -1,6 +1,6 @@
 import unittest
 
-from HexMap.Map import Map, Position, MapUnit
+from HexMap.Map import Map, Grid, MapUnit
 
 class TestMap( unittest.TestCase ):
 	def setUp( self ):
@@ -108,22 +108,22 @@ class TestMap( unittest.TestCase ):
 	def test_line( self ):
 		raise NotImplementedError
 
-class TestPosition( unittest.TestCase ):
+class TestGrid( unittest.TestCase ):
 	def setUp( self ):
-		self.position = Position()
+		self.grid = Grid()
 
 	def test_assignment( self ):
 		key, value = ( 0, 0 ), "U"
-		self.position[ key ] = value
-		self.assertTrue( key in self.position,
+		self.grid[ key ] = value
+		self.assertTrue( key in self.grid,
 			"Failed to create key %s" % str( key ) )
-		self.assertTrue( value == self.position[ key ],
+		self.assertTrue( value == self.grid[ key ],
 			"Key %s does not return value %s" % ( key, value ) )
 
 	def test_find( self ):
 		key, value = ( 0, 0 ), "U"
-		self.position[ key ] = value
-		self.assertTrue( key == self.position.find( value ),
+		self.grid[ key ] = value
+		self.assertTrue( key == self.grid.find( value ),
 			 "Find %s did not correctly return key %s " % ( value, key ) )
 
 class TestMapUnit( unittest.TestCase ):
@@ -134,19 +134,20 @@ class TestMapUnit( unittest.TestCase ):
 
 	def setUp( self ):
 		self.map = Map( ( 5, 5 ) )
+		self.map.units = Grid()
 
 	def test_position_succeeds( self ):
-		pos, unit = ( 3, 2 ), self.TestUnit( self.map )
-		self.map.positions[ pos ] = unit
+		pos, unit = ( 3, 2 ), self.TestUnit( self.map.units )
+		self.map.units[ pos ] = unit
 		self.assertTrue( unit.position == pos,
 			"Unit %s position was returned as %s, instead of %s." % ( unit, unit.position, pos ) )
 
-		unit = self.TestUnit( self.map )
+		unit = self.TestUnit( self.map.units )
 		self.assertTrue( unit.position == None,
 			"Unit %s position was returned as %s, but it should not be on the map." % ( unit, unit.position ) )
 
 def load_tests( loader, tests, pattern ):
-	tests = [ TestMap, TestPosition, TestMapUnit ]
+	tests = [ TestMap, TestGrid, TestMapUnit ]
 
 	suite = unittest.TestSuite()
 	for test_class in tests:
