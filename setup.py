@@ -1,8 +1,8 @@
 from distutils.core import setup
 
-setup( 
+setup(
     name='pyghexmap',
-    version='0.1',
+    version=open( 'VERSION' ).read(),
     url='https://github.com/mklauber/pygame-hex-grid/',
     packages=['hexmap'],
     license='GNU LESSER GENERAL PUBLIC LICENSE',
