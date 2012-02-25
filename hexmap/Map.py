@@ -11,17 +11,17 @@ logger = logging.getLogger( __name__ )
 
 class Map( object ):
 	"""
-	An top level object for managing all game data related to positioning, movement, and display.
+	An top level object for managing all game data related to positioning.
 	"""
 	directions = [ ( 0, 1 ), ( 1, 1 ), ( 1, 0 ), ( 0, -1 ), ( -1, -1 ), ( -1, 0 ) ]
 
 	def __init__( self, ( rows, cols ), *args, **keywords ):
-		# for tracking units
-		self.positions = Position()
-
 		#Map size
 		self.rows = rows
 		self.cols = cols
+
+	def __str__( self ):
+		return "Map (%d, %d)" % ( self.rows, self.cols )
 
 	@property
 	def size( self ):
@@ -39,23 +39,36 @@ class Map( object ):
 		logger.debug( "diffX: %d, diffY: %d, distance: %d", diffX, diffY, distance )
 		return distance
 
+	@classmethod
 	def direction( self, origin, destination ):
 		"""
 		Reports the dominating direction from an origin to a destination.  if even, chooses randomly
 		Useful for calculating any type of forced movement
 		"""
 		offset = ( destination[0] - origin[0], destination[1] - origin[1] )
-		direction = ( offset[0] / float( max( offset ) ), offset[1] / float( max( offset ) ) )
+		scale = float( max( abs( offset[0] ), abs( offset[1] ) ) )
+		if scale == 0:
+			return ( 0, 0 )
+		direction = ( offset[0] / scale, offset[1] / scale )
+
+		#Handle special cases
+		if direction == ( 1, -1 ):
+			return random.choice( [ ( 1, 0 ), ( 0, -1 ) ] )
+		elif direction == ( -1, 1 ):
+			return random.choice( [ ( -1, 0 ), ( 0, 1 ) ] )
+
 
 		def choose( i ):
 			if i == 0.5:
 				return random.choice( ( 0, 1 ) )
+			elif i == -0.5:
+				return random.choice( ( 0, -1 ) )
 			else:
 				return int( round( i ) )
 
 		return ( choose( direction[0] ), choose( direction[1] ) )
 
-	def ascii( self, numbers=True, units=True ):
+	def ascii( self, numbers=True ):
 		""" Debug method that draws the grid using ascii text """
 
 		table = ""
@@ -82,14 +95,14 @@ class Map( object ):
 			bottom = "\\"
 
 			for col in range( self.cols ):
-				unit = "U" if units and self.positions.get( ( row + col / 2, col ) ) else ""
+#				unit = "U" if units and self.positions.get( ( row + col / 2, col ) ) else ""
 				if col % 2 == 0:
 					text = "%d,%d" % ( row + col / 2, col ) if numbers else ""
 					top 	 += ( text ).center( text_length ) + "\\"
-					bottom	 += ( unit ).center( text_length, '_' ) + "/"
+					bottom	 += ( "" ).center( text_length, '_' ) + "/"
 				else:
 					text = "%d,%d" % ( 1 + row + col / 2, col ) if numbers else " "
-					top 	 += ( unit ).center( text_length, '_' ) + "/"
+					top 	 += ( "" ).center( text_length, '_' ) + "/"
 					bottom	 += ( text ).center( text_length ) + "\\"
 			# Clean up tail slashes on even numbers of columns
 			if self.cols % 2 == 0:
@@ -195,37 +208,48 @@ class Map( object ):
 			results.append( ( origin[0] + offset[0] * i, origin[1] + offset[1] * i ) )
 		return filter( self.valid_cell, results )
 
-	def units( self, cells ):
-		"""
-		Returns a dictionary of cell and units, given a set of cells 
-		"""
-		return {cell: self.positions[cell] for cell in cells if self.positions.get( cell, None )}
+	def cells( self ):
+		cells = []
+		for row in range( self.rows + self.cols / 2 ):
+			cells.extend( 
+				[( row, col ) for col in range( 1 + 2 * row ) ]
+			)
+		return filter( self.valid_cell, cells )
 
-class Position( dict ):
-	"""An extension of a basic dictionary with a fast lookup by value implementation."""
-	def find( self, unit ):
+class Grid( dict ):
+	"""An extension of a basic dictionary with a fast, consistent lookup by value implementation."""
+
+	def __init__( self, default=None, *args, **keywords ):
+		super( Grid, self ).__init__( *args, **keywords )
+		self.default = default
+
+	def __getitem__( self, key ):
+		return super( Grid, self ).get( key, self.default )
+
+	def find( self, item ):
 		"""
 		A fast lookup by value implementation
 		"""
-		temp = unit
-		for pos, unit in self.items():
-			if unit == temp:
+		for pos, value in self.items():
+			if item == value:
 				return pos
+		return None
 
 class MapUnit( object ):
 	"""
-	An abstract base class that will contain or require implementation of all the methods necessary for a unit to be managed by a map object.
+	An abstract base class that will contain or require implementation of all 
+	the methods necessary for a unit to be managed by a map object.
 	"""
 
 	__metaclass__ = ABCMeta
 
-	def __init__( self, map=map ):
-		self.map = map = map
+	def __init__( self, grid ):
+		self.grid = grid
 
 	@property
 	def position( self ):
 		"""A property that looks up the position of this unit on it's associated map."""
-		return self.map.position.find( self )
+		return self.grid.find( self )
 
 	@abstractmethod
 	def paint( self, surface ):
@@ -241,7 +265,6 @@ if __name__ == '__main__':
 	parser.add_argument( '-r', '--rows', dest='rows', type=int, default=5, help='Number of rows in grid.  Defaults to 5.' )
 	parser.add_argument( '-c', '--cols', dest='cols', type=int, default=5, help='Number of columns in grid.  Defaults to 5.' )
 	parser.add_argument( '-n', '--numbers', action="store_true", dest="numbers", default=False, help='Display grid numbers on tiles.  Defaults to false.' )
-	parser.add_argument( '-u', '--units', action="store_true", dest="units", default=False, help='Display units on tiles.  Defaults to false.' )
 	parser.add_argument( '-i', '--interactive', action="store_true", dest="interactive", default=False, help="Provide a ncurses interactive interface." )
 
 
@@ -249,8 +272,8 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	print( "Args: %s" % ( args ) )
 	m = Map( ( args.rows, args.cols ) )
+	m.units = Grid()
 	numbers = args.numbers
-	units = args.units
 
 	if args.interactive:
 		try:
@@ -260,19 +283,11 @@ if __name__ == '__main__':
 			stdscr.keypad( 1 )
 
 			while True:
-				stdscr.addstr( 1, 0, m.ascii( numbers=numbers, units=units ) )
+				stdscr.addstr( 1, 0, m.ascii( numbers=numbers ) )
 				c = stdscr.getstr()
 				stdscr.clear()
 				if c == 'q': break
-				elif c == 'U': units = not units
 				elif c == 'N': numbers = not numbers
-				elif re.match( r"U \d+,\d+", c ):
-					row, col = c[2:].split( ',' )
-					unit = m.positions.get( ( int( row ), int( col ) ) )
-					m.positions[ ( int( row ), int( col ) ) ] = "" if unit else "U"
-					stdscr.addstr( 0, 0, "%s unit at %s,%s" % ( "Adding" if not unit else "Removing", row, col ) )
-				else:
-					stdscr.addstr( 0, 0, "unrecognized input." )
 
 		finally:
 			curses.nocbreak()
@@ -280,4 +295,4 @@ if __name__ == '__main__':
 			curses.echo()
 			curses.endwin()
 	else:
-		print( m.ascii( numbers, units ) )
+		print( m.ascii( numbers ) )
