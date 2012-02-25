@@ -1,6 +1,6 @@
 import unittest
 
-from HexMap.Map import Map, Grid, MapUnit
+from hexmap.Map import Map, Grid, MapUnit
 
 class TestMap( unittest.TestCase ):
 	def setUp( self ):

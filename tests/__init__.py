@@ -1,15 +1,10 @@
 import unittest
 
-import os, sys
-dir = os.getcwd()
-if dir not in sys.path:
-	sys.path.append( dir )
-
-import HexMap.tests.Map
-import HexMap.tests.Render
+import tests.Map as Map
+import tests.Render as Render
 
 def load_tests( loader, standard_tests, pattern ):
-	tests = [ HexMap.tests.Map, HexMap.tests.Render ]
+	tests = [ Map, Render ]
 
 	return unittest.TestSuite( tests=[ test.load_tests( loader, standard_tests, None ) for test in tests] )
 
