@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import pygame
 import math
-from Map import Grid
+from HexMap.Map import Grid
 
 SQRT3 = math.sqrt( 3 )
 
