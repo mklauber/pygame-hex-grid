@@ -20,4 +20,5 @@ setup(
 		"Topic :: Games/Entertainment :: Turn Based Strategy"
         ],
     long_description=open( 'README.rst' ).read(),
+    requires=[ 'pygame']
  )
