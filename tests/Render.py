@@ -1,7 +1,7 @@
 import unittest
 
-from HexMap.Map import Map
-from HexMap.Render import Render, RenderUnits, RenderGrid, RenderFog
+from hexmap.Map import Map
+from hexmap.Render import Render, RenderUnits, RenderGrid, RenderFog
 
 class TestRender( unittest.TestCase ):
 
