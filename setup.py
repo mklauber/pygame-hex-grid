@@ -1,8 +1,13 @@
 from distutils.core import setup
+import os.path
+
+def read( filename ):
+    path = os.path.join(os.path.dirname(__file__), filename)
+    return open(path)
 
 setup(
     name='pyghexmap',
-    version=open( 'VERSION' ).read(),
+    version=read( 'VERSION' ).read().strip(),
     url='https://github.com/mklauber/pygame-hex-grid/',
     packages=['hexmap'],
     license='GNU LESSER GENERAL PUBLIC LICENSE',
@@ -19,6 +24,6 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
 		"Topic :: Games/Entertainment :: Turn Based Strategy"
         ],
-    long_description=open( 'README.rst' ).read(),
-    requires=[ 'pygame']
+    long_description=read( 'README.rst' ).read(),
+    install_requires=[ 'pygame']
  )
