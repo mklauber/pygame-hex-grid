@@ -51,9 +51,18 @@ class Map( object ):
 			return ( 0, 0 )
 		direction = ( offset[0] / scale, offset[1] / scale )
 
+		#Handle special cases
+		if direction == ( 1, -1 ):
+			return random.choice( [ ( 1, 0 ), ( 0, -1 ) ] )
+		elif direction == ( -1, 1 ):
+			return random.choice( [ ( -1, 0 ), ( 0, 1 ) ] )
+
+
 		def choose( i ):
 			if i == 0.5:
 				return random.choice( ( 0, 1 ) )
+			elif i == -0.5:
+				return random.choice( ( 0, -1 ) )
 			else:
 				return int( round( i ) )
 
