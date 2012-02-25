@@ -19,5 +19,5 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
 		"Topic :: Games/Entertainment :: Turn Based Strategy"
         ],
-    long_description=open( 'README' ).read(),
+    long_description=open( 'README.rst' ).read(),
  )
