@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import pygame
 import math
-from hexmap.Map import Grid
+from hexmap.map import Grid
 
 SQRT3 = math.sqrt( 3 )
 
@@ -11,7 +11,7 @@ class Render( pygame.Surface ):
 
 
 
-	def __init__( self, map, radius=16, *args, **keywords ):
+	def __init__( self, map, radius=24, *args, **keywords ):
 		self.map = map
 		self.radius = radius
 
@@ -32,8 +32,7 @@ class Render( pygame.Surface ):
 
 	@property
 	def width( self ):
-		return	math.ceil( self.map.cols / 2.0 ) * 2 * self.radius + \
-				math.floor( self.map.cols / 2.0 ) * self.radius + 1
+		return	self.map.cols * self.radius * 1.5 + self.radius / 2.0
 	@property
 	def height( self ):
 		return ( self.map.rows + .5 ) * self.radius * SQRT3 + 1
@@ -165,6 +164,8 @@ class RenderFog( Render ):
 		width = 1.5 * self.radius
 		offset = height / 2
 
+		self.fill( self.OBSCURED )
+
 		for cell in self.map.cells():
 			row, col = cell
 			surface = self.get_cell( cell )
@@ -186,7 +187,7 @@ def trim_cell( surface ):
 
 
 if __name__ == '__main__':
-	from Map import Map, MapUnit
+	from .map import Map, MapUnit
 	import sys
 
 	class Unit( MapUnit ):

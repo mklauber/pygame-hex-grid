@@ -20,5 +20,6 @@ def load_tests( loader, tests, pattern ):
 	return suite
 
 if __name__ == '__main__':
-	tests = suite()
+	loader = unittest.TestLoader()
+	tests = load_tests( loader, None, None )
 	unittest.TextTestRunner( verbosity=2 ).run( tests )

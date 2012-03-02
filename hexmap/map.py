@@ -28,6 +28,7 @@ class Map( object ):
 		"""Returns the size of the grid as a tuple (row, col)"""
 		return ( self.rows, self.cols )
 
+	@classmethod
 	def distance( self, start, destination ):
 		"""Takes two hex coordinates and determine the distance between them."""
 		logger.debug( "Start: %s, Dest: %s", start, destination )
